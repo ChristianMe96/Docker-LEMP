@@ -1,5 +1,7 @@
 FROM php:8.0-fpm-alpine as backend
 
+ARG APP_ENV
+
 LABEL maintainer="Christian Meinhard"
 
 ARG TIME_ZONE='Europe/Berlin'
@@ -12,6 +14,13 @@ COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr
 
 # Install extensions
 RUN install-php-extensions bcmath pdo_mysql redis
+
+# Install the xdebug extension when APP_ENV is local
+RUN if [ ${APP_ENV} = local ]; then \
+    install-php-extensions xdebug \
+    && echo "xdebug.mode=debug" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo "xdebug.client_host = host.docker.internal" >>/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+;fi
 
 # Install Composer
 COPY --from=composer:2.0 /usr/bin/composer /usr/local/bin/composer
@@ -35,5 +44,5 @@ USER www-data
 
 FROM backend as worker
 
-# Start worker
+# Start worker for Laravel Applications
 CMD ["php", "/var/www/artisan", "queue:work"]

@@ -19,6 +19,10 @@ services:
     build:
       context: ./.docker/backend
       target: backend
+      args:
+        APP_ENV: ${APP_ENV}
+    environment:
+      PHP_IDE_CONFIG: serverName=localhost
     restart: unless-stopped
     volumes:
       - ./:/var/www

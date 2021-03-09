@@ -4,13 +4,14 @@ services:
 
   # Nginx Service
   nginx:
-    image: nginx:alpine
+    build: ./.docker/nginx
     ports:
       - 80:80
       - 443:443
     volumes:
       - ./:/var/www:ro
-      - ./.docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./.docker/nginx/conf.d:/etc/nginx/conf.d
+      - ./.docker/nginx/certs:/etc/nginx/certs
     depends_on:
       - backend
 
@@ -21,8 +22,6 @@ services:
       target: backend
       args:
         APP_ENV: ${APP_ENV}
-    environment:
-      PHP_IDE_CONFIG: serverName=localhost
     restart: unless-stopped
     volumes:
       - ./:/var/www
@@ -43,15 +42,15 @@ services:
 
   # MYSQL Service
   mysql:
-    image: mysql:8.0
+    image: mysql:8
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: "root"
-      MYSQL_DATABASE: "demo"
-      MYSQL_USER: "root"
-      MYSQL_PASSWORD: "root"
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - ./.docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf:ro
+      - ./.docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
       - mysqldata:/var/lib/mysql
     ports:
       - 3306:3306
@@ -64,11 +63,26 @@ services:
     volumes:
       - redisdata:/data
 
+  node:
+    image: node:15.11-alpine
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+
+#  # Scheduler Service
+#  scheduler:
+#    image: mcuadros/ofelia:latest
+#    volumes:
+#      - /var/run/docker.sock:/var/run/docker.sock
+#      - ./.docker/scheduler/config.ini:/etc/ofelia/config.ini
+#    depends_on:
+#      - backend
+
 # Volumes
 volumes:
 
   mysqldata:
-      driver: local
+    driver: local
 
   redisdata:
-      driver: local
+    driver: local
